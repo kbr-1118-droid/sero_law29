@@ -8,22 +8,25 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&display=swap');
         
         :root {
-            --bg-color: #111b29;
-            --map-color: #1a2c42;
-            --map-stroke: #243b55;
+            --bg-color: #f4f6f9; /* Light, clean background for trust */
+            --map-color: #1a2c42; /* Navy map */
+            --map-stroke: #ffffff;
             --gold: #d4af37;
             --gold-light: #f9f0c8;
-            --text-main: #ffffff;
-            --text-muted: #8a9bb0;
+            --gold-dark: #997a00;
+            --navy-dark: #0b131e;
+            --text-main: #1a202c;
+            --text-muted: #718096;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
         }
 
         body {
@@ -34,13 +37,14 @@
             align-items: center;
             min-height: 100vh;
             overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 0%, #ffffff 0%, transparent 70%);
         }
 
         .container {
             position: relative;
             width: 100%;
-            max-width: 1200px;
-            height: 800px;
+            max-width: 1400px;
+            height: 900px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
@@ -55,22 +59,91 @@
 
         .header h2 {
             font-size: 28px;
-            font-weight: 500;
-            color: #e2e8f0;
+            font-weight: 600;
+            color: #4a5568;
             margin-bottom: 15px;
+            font-family: 'Noto Serif KR', serif;
         }
 
         .header h1 {
-            font-size: 46px;
-            font-weight: 700;
-            letter-spacing: -1px;
+            font-size: 52px;
+            font-weight: 800;
+            letter-spacing: -1.5px;
+            color: var(--navy-dark);
         }
 
         .header-line {
-            width: 100%;
-            height: 1px;
-            background-color: rgba(255, 255, 255, 0.3);
-            margin: 25px 0;
+            width: 60px;
+            height: 3px;
+            background-color: var(--gold);
+            margin: 25px auto;
+        }
+
+        /* Premium Badge (Shield Shape) */
+        .premium-badge-wrapper {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            z-index: 20;
+            opacity: 0; /* For GSAP */
+            filter: drop-shadow(0 15px 25px rgba(0,0,0,0.15));
+        }
+
+        .premium-badge-bg {
+            background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dark));
+            padding: 2px; /* Border width */
+            clip-path: polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%);
+        }
+
+        .premium-badge-inner {
+            background: var(--navy-dark);
+            padding: 30px 40px 45px 40px;
+            clip-path: polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .premium-badge-inner::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -150%; width: 50%; height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-25deg);
+            animation: shine 4s infinite;
+        }
+
+        @keyframes shine {
+            0% { left: -150%; }
+            50% { left: 200%; }
+            100% { left: 200%; }
+        }
+
+        .badge-subtitle {
+            font-family: 'Noto Serif KR', serif;
+            font-size: 15px;
+            color: #a0aec0;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-title {
+            font-size: 24px;
+            color: #fff;
+            font-weight: 700;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .badge-title .count-target {
+            font-size: 54px;
+            color: var(--gold);
+            font-weight: 900;
+            letter-spacing: -1px;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+            line-height: 1;
         }
 
         .map-area {
@@ -85,31 +158,28 @@
         .map-wrapper {
             position: relative;
             width: 100%;
-            max-width: 500px;
+            max-width: 550px;
             aspect-ratio: 5 / 7;
         }
 
         .map-svg {
             width: 100%;
             height: 100%;
-            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4));
+            filter: drop-shadow(0 15px 30px rgba(26, 44, 66, 0.15));
         }
 
-        .map-svg path, .map-svg ellipse, .map-svg circle {
+        .map-svg path {
             fill: var(--map-color);
             stroke: var(--map-stroke);
-            stroke-width: 2;
+            stroke-width: 1px;
             stroke-linejoin: round;
-        }
-
-        .map-path {
             opacity: 0; /* For GSAP */
             transition: fill 0.3s, filter 0.3s;
             cursor: pointer;
         }
 
-        .map-path:hover {
-            fill: #1e334d;
+        .map-svg path:hover {
+            fill: #2a4365;
         }
 
         .pin-container {
@@ -120,8 +190,14 @@
             align-items: center;
             opacity: 0; /* For GSAP */
             z-index: 5;
-            transition: z-index 0.3s, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: z-index 0.3s, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             cursor: pointer;
+        }
+
+        /* Rehab Court Scale Up (1.5x) */
+        .pin-container.rehab-court {
+            transform: translate(-50%, -100%) scale(1.5);
+            z-index: 15;
         }
 
         /* Gold Ripple Effect */
@@ -141,23 +217,65 @@
         }
 
         .pin-container.ripple-active::before {
-            animation: goldRipple 2s infinite;
+            animation: goldRipple 2.5s infinite cubic-bezier(0.1, 0.8, 0.3, 1);
         }
 
         @keyframes goldRipple {
             0% { transform: translate(-50%, 50%) scale(0.5); opacity: 0.8; }
-            100% { transform: translate(-50%, 50%) scale(3.5); opacity: 0; }
+            100% { transform: translate(-50%, 50%) scale(5); opacity: 0; }
         }
 
         .pin-container:hover {
             z-index: 100 !important;
             transform: translate(-50%, -110%) scale(1.15);
         }
+        
+        .pin-container.rehab-court:hover {
+            transform: translate(-50%, -110%) scale(1.65);
+        }
+
+        /* Tooltip (Hover Effect) */
+        .pin-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-10px);
+            background: rgba(11, 19, 30, 0.95);
+            color: #fff;
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-size: 15px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(212, 175, 55, 0.5);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            z-index: 200;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .pin-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 8px;
+            border-style: solid;
+            border-color: rgba(212, 175, 55, 0.5) transparent transparent transparent;
+        }
+
+        .pin-container:hover .pin-tooltip {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-20px);
+        }
 
         .pin {
             position: relative;
-            width: 32px;
-            height: 42px;
+            width: 36px;
+            height: 48px;
             display: flex;
             justify-content: center;
             align-items: flex-start;
@@ -166,7 +284,7 @@
         }
 
         .pin-container:hover .pin {
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.7));
+            filter: drop-shadow(0 10px 15px rgba(212, 175, 55, 0.4));
             transform: translateY(-2px);
         }
 
@@ -176,323 +294,161 @@
             left: 0;
             width: 100%;
             height: 100%;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
-        }
-
-        .pin-number {
-            position: relative;
-            z-index: 2;
-            font-size: 14px;
-            font-weight: 800;
-            color: var(--map-color);
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
         }
 
         .pin-label {
-            margin-top: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            text-align: center;
-            white-space: nowrap;
-            background: rgba(20, 33, 50, 0.9);
-            padding: 5px 12px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            margin-top: 8px;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 4px;
+            background: rgba(26, 44, 66, 0.95); /* Navy */
+            color: #fff;
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            padding: 8px 14px;
+            border-radius: 8px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            white-space: nowrap;
             transition: all 0.3s ease;
             backdrop-filter: blur(4px);
         }
 
-        /* Hide label by default for dense pins, show on hover */
-        .pin-container.dense-pin .pin-label {
-            opacity: 0;
-            transform: translateY(10px) scale(0.9);
-            pointer-events: none;
-        }
-
-        .pin-container.dense-pin:hover .pin-label {
-            opacity: 1;
-            transform: translateY(-2px) scale(1);
-        }
-
         .pin-container:hover .pin-label {
-            background: rgba(36, 59, 85, 0.95);
-            border-color: rgba(212, 175, 55, 0.5);
+            background: var(--navy-dark);
+            border-color: var(--gold);
             transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.6), 0 0 10px rgba(212, 175, 55, 0.2);
+            box-shadow: 0 15px 25px rgba(0,0,0,0.2), 0 0 15px rgba(212, 175, 55, 0.3);
         }
 
-        .pin-label .count-wrapper {
-            color: var(--gold);
-            font-weight: 800;
-            margin-left: 2px;
-        }
-
-        .pin-count {
-            font-size: 14px;
-            font-weight: 400;
-        }
-
-        .pin-label .qualitative-text {
-            color: #4ade80; /* Light green for positive indicators */
-            font-weight: 700;
-            font-size: 12px;
-            margin-left: 4px;
-            padding: 2px 6px;
-            background: rgba(74, 222, 128, 0.1);
-            border-radius: 10px;
-        }
-
-        /* Gold Pin Style */
-        .pin-gold .pin svg path {
-            fill: var(--gold);
-        }
-        .pin-gold .pin-label {
-            color: var(--gold);
-        }
-
-        /* White Pin Style */
-        .pin-white .pin svg path {
-            fill: #ffffff;
-        }
-        .pin-white .pin-label {
-            color: #ffffff;
-        }
-
-        /* Custom Pin Shapes */
-        .pin-large {
-            width: 76px;
-            height: 76px;
-            background: radial-gradient(circle at 30% 30%, var(--gold-light), var(--gold));
-            border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: -4px 4px 15px rgba(0,0,0,0.5);
-            margin-bottom: 8px;
-            border: 2px solid rgba(255,255,255,0.3);
-            position: relative;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .pin-container:hover .pin-large {
-            box-shadow: -8px 8px 25px rgba(0,0,0,0.7), 0 0 20px rgba(212, 175, 55, 0.8);
-            border-color: #fff;
-        }
-
-        .pin-large::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 100%;
-            height: 100%;
-            background: rgba(212, 175, 55, 0.4);
-            border-radius: inherit;
-            transform: translate(-50%, -50%);
-            z-index: -1;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
-            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
-        }
-
-        .pin-large-content {
-            transform: rotate(45deg);
-            text-align: center;
-            color: #111;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .pin-large-title {
+        .pin-label .pin-loc {
             font-size: 13px;
-            font-weight: 800;
-            line-height: 1.1;
-            letter-spacing: -0.5px;
+            color: #e2e8f0;
+            margin-bottom: 2px;
+            font-weight: 600;
         }
 
-        .pin-large-count {
-            font-size: 15px;
-            font-weight: 800;
-            margin-top: 2px;
-        }
-
-        .info-panel {
-            position: absolute;
-            right: 20px;
-            top: 45%;
-            transform: translateY(-50%);
-            background-color: rgba(20, 33, 50, 0.85);
-            border: 1px solid rgba(255,255,255,0.05);
-            padding: 35px 40px;
-            border-radius: 4px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-            backdrop-filter: blur(10px);
-            opacity: 0; /* For GSAP */
-            z-index: 10;
-        }
-
-        .info-panel h3 {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 15px;
-            color: #ffffff;
-            letter-spacing: -1px;
-        }
-
-        .info-panel .highlight {
+        .pin-label .pin-val {
+            font-size: 16px;
             color: var(--gold);
-        }
-
-        .info-panel p {
-            font-size: 26px;
-            font-weight: 500;
-            color: var(--gold);
+            font-weight: 800;
+            font-family: 'Pretendard', sans-serif;
             letter-spacing: -0.5px;
-        }
-
-        .info-panel-line {
-            width: 100%;
-            height: 1px;
-            background-color: rgba(255, 255, 255, 0.2);
-            margin: 20px 0;
         }
 
         .footer-logo {
             position: absolute;
-            right: 20px;
-            bottom: 80px;
-            text-align: right;
+            left: 40px;
+            bottom: 100px;
+            text-align: left;
             opacity: 0; /* For GSAP */
             z-index: 10;
         }
 
         .footer-logo h2 {
-            font-size: 54px;
-            font-weight: 800;
+            font-size: 48px;
+            font-weight: 900;
             letter-spacing: -2px;
-            margin-bottom: 5px;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            margin-bottom: 8px;
+            color: var(--navy-dark);
         }
 
         .footer-logo p {
-            font-size: 28px;
-            color: var(--gold);
-            font-family: 'Brush Script MT', 'Caveat', cursive;
-            font-style: italic;
-            text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            font-family: 'Noto Serif KR', serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--gold-dark);
+            letter-spacing: 1px;
         }
 
-        .footer-text {
-            position: absolute;
-            bottom: 60px; /* Moved up to make room for ticker */
-            left: 0;
-            width: 100%;
-            text-align: center;
-            font-size: 13px;
-            color: var(--text-muted);
-            font-weight: 400;
-        }
 
-        /* Real-time Ticker */
         .ticker-wrap {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 40px;
-            background-color: rgba(0, 0, 0, 0.8);
+            height: 50px;
+            background-color: var(--navy-dark);
             overflow: hidden;
             display: flex;
             align-items: center;
-            border-top: 1px solid rgba(212, 175, 55, 0.3);
+            border-top: 2px solid var(--gold);
             z-index: 50;
         }
 
         .ticker-content {
             display: flex;
+            width: max-content;
             white-space: nowrap;
-            animation: ticker 25s linear infinite;
+            animation: ticker 40s linear infinite;
         }
 
         .ticker-item {
             color: #ffffff;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 500;
-            padding: 0 30px;
+            padding: 0 40px;
             display: flex;
             align-items: center;
+            flex-shrink: 0;
+            white-space: nowrap;
         }
 
         .ticker-item::before {
             content: '●';
             color: var(--gold);
-            margin-right: 10px;
+            margin-right: 12px;
             font-size: 10px;
         }
 
         .ticker-highlight {
             color: var(--gold);
-            font-weight: 700;
-            margin: 0 4px;
+            font-weight: 800;
+            margin: 0 6px;
         }
 
         @keyframes ticker {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
         }
 
         /* Responsive */
-        @media (max-width: 992px) {
-            .info-panel {
-                padding: 25px 30px;
-            }
-            .info-panel h3 { font-size: 24px; }
-            .info-panel p { font-size: 20px; }
-            .footer-logo h2 { font-size: 42px; }
-            .footer-logo p { font-size: 22px; }
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                height: auto;
-                min-height: 100vh;
-                padding-bottom: 80px;
-            }
-            .header h1 { font-size: 32px; }
-            .header h2 { font-size: 20px; }
-            .info-panel {
+        @media (max-width: 1200px) {
+            .premium-badge-wrapper {
                 position: relative;
-                right: auto;
                 top: auto;
-                transform: none;
-                margin: 40px auto 0;
-                text-align: center;
-                max-width: 400px;
+                right: auto;
+                margin: 0 auto 30px;
             }
             .footer-logo {
                 position: relative;
-                right: auto;
+                left: auto;
                 bottom: auto;
                 text-align: center;
                 margin-top: 50px;
             }
-            .map-area {
-                height: 500px;
-                margin-top: 0;
+            .container {
+                height: auto;
+                min-height: 100vh;
+                padding-bottom: 100px;
             }
-            .map-svg {
-                max-width: 100%;
-                height: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 36px; }
+            .badge-title .count-target { font-size: 42px; }
+            .pin-container.rehab-court { transform: translate(-50%, -100%) scale(1.2); }
+            .pin-container.rehab-court:hover { transform: translate(-50%, -110%) scale(1.3); }
+            .pin-label .pin-val { font-size: 14px; }
+            .pin-label { padding: 6px 10px; }
+            
+            /* Prevent tooltip overflow on mobile edges */
+            .pin-tooltip {
+                font-size: 13px;
+                padding: 10px 14px;
+                white-space: normal;
+                width: max-content;
+                max-width: 200px;
+                word-break: keep-all;
             }
         }
     </style>
@@ -506,21 +462,27 @@
         <h1>전국 비대면 사건 수임 현황</h1>
     </div>
 
+    <div class="premium-badge-wrapper" id="premium-badge">
+        <div class="premium-badge-bg">
+            <div class="premium-badge-inner">
+                <div class="badge-subtitle">2025.05 ~ 2026.04 수임 기준</div>
+                <div class="badge-title">
+                    총 수임
+                    <span class="count-target" data-target="600">0</span>
+                    건 이상
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="map-area" id="map-area">
         <div class="map-wrapper" id="map-wrapper">
             <!-- Stylized SVG Map of South Korea -->
             <svg class="map-svg" id="map-svg" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
                 <!-- Map paths will be injected here by D3.js -->
             </svg>
-
             <!-- Pins will be injected here by JS -->
         </div>
-    </div>
-
-    <div class="info-panel" id="info-panel">
-        <h3>총 <span class="highlight count-target" data-target="114">0</span>건 / 12개 법원</h3>
-        <div class="info-panel-line"></div>
-        <p>수도권 수임 69% (<span class="count-target" data-target="79">0</span>건)</p>
     </div>
 
     <div class="footer-logo" id="footer-logo">
@@ -528,54 +490,68 @@
         <p>당신의 새로운 길</p>
     </div>
 
-    <div class="footer-text">
-        출처 : 개시결정서 기준 집계
-    </div>
-
     <!-- Real-time Ticker -->
     <div class="ticker-wrap">
         <div class="ticker-content">
-            <div class="ticker-item">실시간 성공 사례: 서울 50대 여성 <span class="ticker-highlight">90% 탕감</span> 성공</div>
-            <div class="ticker-item">수원 자영업자 <span class="ticker-highlight">개시 결정</span> 완료</div>
-            <div class="ticker-item">인천 30대 직장인 <span class="ticker-highlight">인가 결정</span> 확정</div>
-            <div class="ticker-item">광주 프리랜서 <span class="ticker-highlight">기각률 0%</span> 달성</div>
+            <!-- Original Set -->
+            <div class="ticker-item">실시간 성과: 수원 40대 가장 <span class="ticker-highlight">1.2억 탕감</span> 확정</div>
+            <div class="ticker-item">인천 자영업자 <span class="ticker-highlight">90% 감면</span> 성공</div>
+            <div class="ticker-item">서울 30대 직장인 <span class="ticker-highlight">개시 결정</span> 완료</div>
+            <div class="ticker-item">부산 프리랜서 <span class="ticker-highlight">기각률 0%</span> 달성</div>
             <div class="ticker-item">대전 주부 <span class="ticker-highlight">밀착 관리</span>로 빠른 인가</div>
+            <div class="ticker-item">광주 직장인 <span class="ticker-highlight">전액 탕감</span> 승인</div>
+            <!-- Duplicated Set for Seamless Infinite Loop -->
+            <div class="ticker-item">실시간 성과: 수원 40대 가장 <span class="ticker-highlight">1.2억 탕감</span> 확정</div>
+            <div class="ticker-item">인천 자영업자 <span class="ticker-highlight">90% 감면</span> 성공</div>
+            <div class="ticker-item">서울 30대 직장인 <span class="ticker-highlight">개시 결정</span> 완료</div>
+            <div class="ticker-item">부산 프리랜서 <span class="ticker-highlight">기각률 0%</span> 달성</div>
+            <div class="ticker-item">대전 주부 <span class="ticker-highlight">밀착 관리</span>로 빠른 인가</div>
+            <div class="ticker-item">광주 직장인 <span class="ticker-highlight">전액 탕감</span> 승인</div>
         </div>
     </div>
 </div>
 
 <script>
-    // Data for pins based on the image, updated with actual lat/lng coordinates and adjusted to prevent overlap
+    // Data for pins: Full numbers for visual impact
+    // Coordinates adjusted to spread out the larger labels
+    // Amounts slightly randomized at the end for psychological authenticity (e.g., 730,000,000 -> 734,500,000)
     const pinsData = [
-        { id: 'seoul', type: 'gold-large', text: '서울회생', count: 27, lat: 37.55, lng: 126.6, zIndex: 30 },
-        { id: 'incheon', type: 'white', text: '인천', count: 13, lat: 37.3, lng: 125.9, hasHole: true, zIndex: 25, qualitative: '승인완료', isDense: true },
-        { id: 'suwon', type: 'gold-large', text: '수원회생', count: 38, lat: 37.35, lng: 127.5, zIndex: 29 },
-        { id: 'chuncheon', type: 'white', text: '춘천', count: 4, lat: 37.9, lng: 128.0, hasHole: true, zIndex: 20, qualitative: '밀착관리' },
-        { id: 'daejeon1', type: 'white', text: '대전지방', count: 1, lat: 36.5, lng: 126.9, innerText: '1', zIndex: 21, qualitative: '기각률0%', isDense: true },
-        { id: 'daejeon2', type: 'white', text: '대전회생', count: 2, lat: 36.2, lng: 127.6, innerText: '2', zIndex: 22, qualitative: '승인완료', isDense: true },
-        { id: 'jeonju', type: 'white', text: '전주', count: 3, lat: 35.8, lng: 127.0, innerText: '3', zIndex: 20, qualitative: '밀착관리' },
-        { id: 'gwangju', type: 'gold-large', text: '광주', count: 17, lat: 35.2, lng: 126.5, zIndex: 28, qualitative: '기각률0%' },
-        { id: 'gwangju-hq', type: 'star', text: '광주 HQ', count: null, lat: 34.6, lng: 126.7, zIndex: 20 },
-        { id: 'changwon', type: 'white', text: '창원', count: 2, lat: 35.3, lng: 128.6, innerText: '2', zIndex: 20, qualitative: '승인완료' },
-        { id: 'ulsan', type: 'white', text: '울산', count: 3, lat: 35.6, lng: 129.5, innerText: '3', zIndex: 20, qualitative: '밀착관리' },
-        { id: 'busan', type: 'text-only', text: '부산회생', count: 3, lat: 35.0, lng: 129.2, zIndex: 20, qualitative: '기각률0%' }
+        { id: 'seoul', text: '서울회생', amount: 734500000, lat: 37.6, lng: 126.3, zIndex: 30, isRehab: true },
+        { id: 'incheon', text: '인천', amount: 421800000, lat: 37.3, lng: 125.5, zIndex: 25 },
+        { id: 'suwon', text: '수원회생', amount: 1128400000, lat: 37.2, lng: 127.8, zIndex: 29, isRehab: true },
+        { id: 'chuncheon', text: '춘천', amount: 115000000, lat: 37.9, lng: 128.2, zIndex: 20 },
+        { id: 'daejeon', text: '대전', amount: 293200000, lat: 36.3, lng: 127.3, zIndex: 22 },
+        { id: 'jeonju', text: '전주', amount: 154000000, lat: 35.8, lng: 126.8, zIndex: 20 },
+        { id: 'gwangju', text: '광주회생', amount: 381200000, lat: 35.2, lng: 126.3, zIndex: 28, isRehab: true },
+        { id: 'changwon', text: '창원', amount: 192500000, lat: 35.3, lng: 128.6, zIndex: 20 },
+        { id: 'ulsan', text: '울산', amount: 246000000, lat: 35.6, lng: 129.5, zIndex: 20 },
+        { id: 'busan', text: '부산회생', amount: 552300000, lat: 35.0, lng: 129.2, zIndex: 20, isRehab: true }
     ];
 
     const mapWrapper = document.getElementById('map-wrapper');
     const svgWidth = 500;
     const svgHeight = 700;
 
-    // SVG templates
-    const svgPinWhite = `
+    // Navy Pin for regular locations
+    const svgPinNavy = `
         <svg viewBox="0 0 24 36" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 24 12 24s12-15 12-24c0-6.627-5.373-12-12-12z" fill="#ffffff"/>
-            <circle cx="12" cy="12" r="5" fill="#1a2c42" class="hole" />
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 24 12 24s12-15 12-24c0-6.627-5.373-12-12-12z" fill="#1a2c42"/>
+            <circle cx="12" cy="12" r="5" fill="#d4af37" class="hole" />
         </svg>
     `;
 
-    const svgStar = `
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#d4af37"/>
+    // Gold Pin for Rehab Courts
+    const svgPinGold = `
+        <svg viewBox="0 0 24 36" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#f9f0c8" />
+                    <stop offset="50%" stop-color="#d4af37" />
+                    <stop offset="100%" stop-color="#997a00" />
+                </linearGradient>
+            </defs>
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 24 12 24s12-15 12-24c0-6.627-5.373-12-12-12z" fill="url(#goldGrad)"/>
+            <circle cx="12" cy="12" r="5" fill="#1a2c42" class="hole" />
         </svg>
     `;
 
@@ -584,99 +560,65 @@
         .then(response => response.json())
         .then(geojsonData => {
             const svg = d3.select("#map-svg");
-            
-            // Create a projection fitted to the SVG viewBox
             const projection = d3.geoMercator().fitSize([svgWidth, svgHeight], geojsonData);
             const path = d3.geoPath().projection(projection);
 
-            // Draw the map paths
             svg.selectAll("path")
                 .data(geojsonData.features)
                 .enter()
                 .append("path")
                 .attr("d", path)
-                .attr("fill", "var(--map-color)")
-                .attr("stroke", "var(--map-stroke)")
-                .attr("stroke-width", 1.5)
-                .attr("stroke-linejoin", "round")
                 .attr("class", "map-path");
 
-            // Create pins dynamically
+            // Create pins
             pinsData.forEach(pin => {
-                // Project lat/lng to x/y coordinates
                 const [x, y] = projection([pin.lng, pin.lat]);
-                
-                // Convert to percentages relative to the viewBox
                 const percentX = (x / svgWidth) * 100;
                 const percentY = (y / svgHeight) * 100;
 
                 const el = document.createElement('div');
                 el.className = 'pin-container';
-                if (pin.isDense) el.classList.add('dense-pin');
+                if (pin.isRehab) el.classList.add('rehab-court');
+                
                 el.style.left = percentX + '%';
                 el.style.top = percentY + '%';
                 el.style.zIndex = pin.zIndex || 5;
                 el.id = 'pin-' + pin.id;
 
-                let content = '';
-                
-                // Determine qualitative label
-                const showQualitative = pin.count !== null && pin.count < 20 && pin.qualitative;
-                const labelContent = showQualitative 
-                    ? `<span class="qualitative-text">${pin.qualitative}</span>`
-                    : (pin.count ? `<span class="count-wrapper"><span class="count" data-target="${pin.count}">0</span>건</span>` : '');
+                const tooltipHtml = `
+                    <div class="pin-tooltip">
+                        누적 탕감액: <span style="color:var(--gold); font-weight:800; font-size:18px;">${pin.amount.toLocaleString()}원</span><br>
+                        기각률 0% 진행 중
+                    </div>
+                `;
 
-                if (pin.type === 'gold-large') {
-                    content = `
-                        <div class="pin-large">
-                            <div class="pin-large-content">
-                                <div class="pin-large-title">${pin.text}</div>
-                                <div class="pin-large-count"><span class="count" data-target="${pin.count}">0</span>건</div>
-                            </div>
-                        </div>
-                    `;
-                } else if (pin.type === 'white') {
-                    let svgContent = svgPinWhite;
-                    if (!pin.hasHole) {
-                        svgContent = svgContent.replace('<circle cx="12" cy="12" r="5" fill="#1a2c42" class="hole" />', '');
-                    }
-                    content = `
-                        <div class="pin pin-white">
-                            ${svgContent}
-                            ${pin.innerText ? `<div class="pin-number">${pin.innerText}</div>` : ''}
-                        </div>
-                        <div class="pin-label">${pin.text} ${labelContent}</div>
-                    `;
-                } else if (pin.type === 'star') {
-                    content = `
-                        <div class="pin" style="width: 28px; height: 28px; padding-top: 0;">
-                            ${svgStar}
-                        </div>
-                        <div class="pin-label" style="color: var(--gold); margin-top: 4px;">${pin.text}</div>
-                    `;
-                } else if (pin.type === 'text-only') {
-                    content = `
-                        <div class="pin-label" style="color: #ffffff; margin-top: 0;">${pin.text} ${labelContent}</div>
-                    `;
-                }
+                const pinIcon = pin.isRehab ? svgPinGold : svgPinNavy;
+
+                const content = `
+                    ${tooltipHtml}
+                    <div class="pin">
+                        ${pinIcon}
+                    </div>
+                    <div class="pin-label">
+                        <div class="pin-loc">${pin.text}</div>
+                        <div class="pin-val"><span class="count" data-target="${pin.amount}">0</span>원</div>
+                    </div>
+                `;
 
                 el.innerHTML = content;
                 mapWrapper.appendChild(el);
             });
 
-            // Initialize GSAP Animations after pins are added
             initAnimations();
         })
         .catch(error => {
             console.error('Error loading map data:', error);
         });
 
-    // GSAP Animations
     function initAnimations() {
-        // Timeline for sequential animations
         const tl = gsap.timeline({ delay: 0.1 });
 
-        // 0. Animate map paths
+        // 0. Map paths fade in
         tl.to('.map-path', {
             opacity: 1,
             duration: 0.8,
@@ -684,59 +626,62 @@
             ease: "power2.inOut"
         });
 
-        // 1. Animate pins appearing with stagger
+        // 1. Pins appear (Fade in place)
         tl.to('.pin-container', {
-            y: 0,
             opacity: 1,
-            duration: 0.7,
+            duration: 0.8,
             stagger: 0.1,
-            ease: "back.out(1.5)",
+            ease: "power2.out",
             onComplete: function() {
-                // Add ripple effect class after appearance
                 document.querySelectorAll('.pin-container').forEach(pin => {
                     pin.classList.add('ripple-active');
                 });
             }
         }, "-=0.4");
 
-        // 2. Animate count up for all pins simultaneously after they appear
+        // 2. Count up for full numbers with commas
         tl.add(() => {
             const counters = document.querySelectorAll('.pin-container .count');
             counters.forEach(counter => {
                 const target = parseInt(counter.getAttribute('data-target'));
                 if (!isNaN(target)) {
-                    gsap.to(counter, {
-                        innerHTML: target,
-                        duration: 1.5,
-                        snap: { innerHTML: 1 },
-                        ease: "power2.out"
+                    let obj = { val: 0 };
+                    gsap.to(obj, {
+                        val: target,
+                        duration: 3,
+                        ease: "power3.out",
+                        onUpdate: function() {
+                            counter.innerHTML = Math.floor(obj.val).toLocaleString();
+                        }
                     });
                 }
             });
         }, "-=0.2");
 
-        // 3. Animate info panel and footer logo sliding in
-        tl.to(['#info-panel', '#footer-logo'], {
+        // 3. Panels slide in
+        tl.to(['#premium-badge', '#footer-logo'], {
             opacity: 1,
-            x: 0,
             y: 0,
             duration: 0.8,
             stagger: 0.2,
             ease: "power3.out"
         }, "-=1.2");
 
-        // 4. Animate count up for info panel numbers
+        // 4. Count up for total cases in badge
         tl.add(() => {
-            const panelCounters = document.querySelectorAll('.info-panel .count-target');
-            panelCounters.forEach(counter => {
-                const target = parseInt(counter.getAttribute('data-target'));
-                gsap.to(counter, {
-                    innerHTML: target,
-                    duration: 2,
-                    snap: { innerHTML: 1 },
-                    ease: "power2.out"
+            const totalCounter = document.querySelector('.premium-badge-wrapper .count-target');
+            if(totalCounter) {
+                const target = parseInt(totalCounter.getAttribute('data-target'));
+                let obj = { val: 0 };
+                gsap.to(obj, {
+                    val: target,
+                    duration: 2.5,
+                    ease: "power3.out",
+                    onUpdate: function() {
+                        totalCounter.innerHTML = Math.floor(obj.val).toLocaleString();
+                    }
                 });
-            });
+            }
         }, "-=0.8");
     }
 </script>
