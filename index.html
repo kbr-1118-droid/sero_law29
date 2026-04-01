@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>새로회생 전국 비대면 사건 수임 현황</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        
+        :root {
+            --bg-color: #111b29;
+            --map-color: #1a2c42;
+            --map-stroke: #243b55;
+            --gold: #d4af37;
+            --gold-light: #f9f0c8;
+            --text-main: #ffffff;
+            --text-muted: #8a9bb0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            height: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            z-index: 10;
+        }
+
+        .header h2 {
+            font-size: 28px;
+            font-weight: 500;
+            color: #e2e8f0;
+            margin-bottom: 15px;
+        }
+
+        .header h1 {
+            font-size: 46px;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .header-line {
+            width: 100%;
+            height: 1px;
+            background-color: rgba(255, 255, 255, 0.3);
+            margin: 25px 0;
+        }
+
+        .map-area {
+            position: relative;
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .map-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 5 / 7;
+        }
+
+        .map-svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4));
+        }
+
+        .map-svg path, .map-svg ellipse, .map-svg circle {
+            fill: var(--map-color);
+            stroke: var(--map-stroke);
+            stroke-width: 2;
+            stroke-linejoin: round;
+        }
+
+        .map-path {
+            opacity: 0; /* For GSAP */
+            transition: fill 0.3s, filter 0.3s;
+            cursor: pointer;
+        }
+
+        .map-path:hover {
+            fill: #1e334d;
+        }
+
+        .pin-container {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0; /* For GSAP */
+            z-index: 5;
+            transition: z-index 0.3s, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+
+        /* Gold Ripple Effect */
+        .pin-container::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            background: rgba(212, 175, 55, 0.6);
+            border-radius: 50%;
+            transform: translate(-50%, 50%) scale(0);
+            z-index: -1;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .pin-container.ripple-active::before {
+            animation: goldRipple 2s infinite;
+        }
+
+        @keyframes goldRipple {
+            0% { transform: translate(-50%, 50%) scale(0.5); opacity: 0.8; }
+            100% { transform: translate(-50%, 50%) scale(3.5); opacity: 0; }
+        }
+
+        .pin-container:hover {
+            z-index: 100 !important;
+            transform: translate(-50%, -110%) scale(1.15);
+        }
+
+        .pin {
+            position: relative;
+            width: 32px;
+            height: 42px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 8px;
+            transition: filter 0.3s, transform 0.3s;
+        }
+
+        .pin-container:hover .pin {
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.7));
+            transform: translateY(-2px);
+        }
+
+        .pin svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+        }
+
+        .pin-number {
+            position: relative;
+            z-index: 2;
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--map-color);
+        }
+
+        .pin-label {
+            margin-top: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            white-space: nowrap;
+            background: rgba(20, 33, 50, 0.9);
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(4px);
+        }
+
+        /* Hide label by default for dense pins, show on hover */
+        .pin-container.dense-pin .pin-label {
+            opacity: 0;
+            transform: translateY(10px) scale(0.9);
+            pointer-events: none;
+        }
+
+        .pin-container.dense-pin:hover .pin-label {
+            opacity: 1;
+            transform: translateY(-2px) scale(1);
+        }
+
+        .pin-container:hover .pin-label {
+            background: rgba(36, 59, 85, 0.95);
+            border-color: rgba(212, 175, 55, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.6), 0 0 10px rgba(212, 175, 55, 0.2);
+        }
+
+        .pin-label .count-wrapper {
+            color: var(--gold);
+            font-weight: 800;
+            margin-left: 2px;
+        }
+
+        .pin-count {
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .pin-label .qualitative-text {
+            color: #4ade80; /* Light green for positive indicators */
+            font-weight: 700;
+            font-size: 12px;
+            margin-left: 4px;
+            padding: 2px 6px;
+            background: rgba(74, 222, 128, 0.1);
+            border-radius: 10px;
+        }
+
+        /* Gold Pin Style */
+        .pin-gold .pin svg path {
+            fill: var(--gold);
+        }
+        .pin-gold .pin-label {
+            color: var(--gold);
+        }
+
+        /* White Pin Style */
+        .pin-white .pin svg path {
+            fill: #ffffff;
+        }
+        .pin-white .pin-label {
+            color: #ffffff;
+        }
+
+        /* Custom Pin Shapes */
+        .pin-large {
+            width: 76px;
+            height: 76px;
+            background: radial-gradient(circle at 30% 30%, var(--gold-light), var(--gold));
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: -4px 4px 15px rgba(0,0,0,0.5);
+            margin-bottom: 8px;
+            border: 2px solid rgba(255,255,255,0.3);
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .pin-container:hover .pin-large {
+            box-shadow: -8px 8px 25px rgba(0,0,0,0.7), 0 0 20px rgba(212, 175, 55, 0.8);
+            border-color: #fff;
+        }
+
+        .pin-large::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            background: rgba(212, 175, 55, 0.4);
+            border-radius: inherit;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+
+        .pin-large-content {
+            transform: rotate(45deg);
+            text-align: center;
+            color: #111;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pin-large-title {
+            font-size: 13px;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.5px;
+        }
+
+        .pin-large-count {
+            font-size: 15px;
+            font-weight: 800;
+            margin-top: 2px;
+        }
+
+        .info-panel {
+            position: absolute;
+            right: 20px;
+            top: 45%;
+            transform: translateY(-50%);
+            background-color: rgba(20, 33, 50, 0.85);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 35px 40px;
+            border-radius: 4px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            opacity: 0; /* For GSAP */
+            z-index: 10;
+        }
+
+        .info-panel h3 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #ffffff;
+            letter-spacing: -1px;
+        }
+
+        .info-panel .highlight {
+            color: var(--gold);
+        }
+
+        .info-panel p {
+            font-size: 26px;
+            font-weight: 500;
+            color: var(--gold);
+            letter-spacing: -0.5px;
+        }
+
+        .info-panel-line {
+            width: 100%;
+            height: 1px;
+            background-color: rgba(255, 255, 255, 0.2);
+            margin: 20px 0;
+        }
+
+        .footer-logo {
+            position: absolute;
+            right: 20px;
+            bottom: 80px;
+            text-align: right;
+            opacity: 0; /* For GSAP */
+            z-index: 10;
+        }
+
+        .footer-logo h2 {
+            font-size: 54px;
+            font-weight: 800;
+            letter-spacing: -2px;
+            margin-bottom: 5px;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .footer-logo p {
+            font-size: 28px;
+            color: var(--gold);
+            font-family: 'Brush Script MT', 'Caveat', cursive;
+            font-style: italic;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        .footer-text {
+            position: absolute;
+            bottom: 60px; /* Moved up to make room for ticker */
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        /* Real-time Ticker */
+        .ticker-wrap {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background-color: rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            border-top: 1px solid rgba(212, 175, 55, 0.3);
+            z-index: 50;
+        }
+
+        .ticker-content {
+            display: flex;
+            white-space: nowrap;
+            animation: ticker 25s linear infinite;
+        }
+
+        .ticker-item {
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+        }
+
+        .ticker-item::before {
+            content: '●';
+            color: var(--gold);
+            margin-right: 10px;
+            font-size: 10px;
+        }
+
+        .ticker-highlight {
+            color: var(--gold);
+            font-weight: 700;
+            margin: 0 4px;
+        }
+
+        @keyframes ticker {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .info-panel {
+                padding: 25px 30px;
+            }
+            .info-panel h3 { font-size: 24px; }
+            .info-panel p { font-size: 20px; }
+            .footer-logo h2 { font-size: 42px; }
+            .footer-logo p { font-size: 22px; }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                height: auto;
+                min-height: 100vh;
+                padding-bottom: 80px;
+            }
+            .header h1 { font-size: 32px; }
+            .header h2 { font-size: 20px; }
+            .info-panel {
+                position: relative;
+                right: auto;
+                top: auto;
+                transform: none;
+                margin: 40px auto 0;
+                text-align: center;
+                max-width: 400px;
+            }
+            .footer-logo {
+                position: relative;
+                right: auto;
+                bottom: auto;
+                text-align: center;
+                margin-top: 50px;
+            }
+            .map-area {
+                height: 500px;
+                margin-top: 0;
+            }
+            .map-svg {
+                max-width: 100%;
+                height: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2>새로회생</h2>
+        <div class="header-line"></div>
+        <h1>전국 비대면 사건 수임 현황</h1>
+    </div>
+
+    <div class="map-area" id="map-area">
+        <div class="map-wrapper" id="map-wrapper">
+            <!-- Stylized SVG Map of South Korea -->
+            <svg class="map-svg" id="map-svg" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+                <!-- Map paths will be injected here by D3.js -->
+            </svg>
+
+            <!-- Pins will be injected here by JS -->
+        </div>
+    </div>
+
+    <div class="info-panel" id="info-panel">
+        <h3>총 <span class="highlight count-target" data-target="114">0</span>건 / 12개 법원</h3>
+        <div class="info-panel-line"></div>
+        <p>수도권 수임 69% (<span class="count-target" data-target="79">0</span>건)</p>
+    </div>
+
+    <div class="footer-logo" id="footer-logo">
+        <h2>새로회생센터</h2>
+        <p>당신의 새로운 길</p>
+    </div>
+
+    <div class="footer-text">
+        출처 : 개시결정서 기준 집계
+    </div>
+
+    <!-- Real-time Ticker -->
+    <div class="ticker-wrap">
+        <div class="ticker-content">
+            <div class="ticker-item">실시간 성공 사례: 서울 50대 여성 <span class="ticker-highlight">90% 탕감</span> 성공</div>
+            <div class="ticker-item">수원 자영업자 <span class="ticker-highlight">개시 결정</span> 완료</div>
+            <div class="ticker-item">인천 30대 직장인 <span class="ticker-highlight">인가 결정</span> 확정</div>
+            <div class="ticker-item">광주 프리랜서 <span class="ticker-highlight">기각률 0%</span> 달성</div>
+            <div class="ticker-item">대전 주부 <span class="ticker-highlight">밀착 관리</span>로 빠른 인가</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Data for pins based on the image, updated with actual lat/lng coordinates and adjusted to prevent overlap
+    const pinsData = [
+        { id: 'seoul', type: 'gold-large', text: '서울회생', count: 27, lat: 37.55, lng: 126.6, zIndex: 30 },
+        { id: 'incheon', type: 'white', text: '인천', count: 13, lat: 37.3, lng: 125.9, hasHole: true, zIndex: 25, qualitative: '승인완료', isDense: true },
+        { id: 'suwon', type: 'gold-large', text: '수원회생', count: 38, lat: 37.35, lng: 127.5, zIndex: 29 },
+        { id: 'chuncheon', type: 'white', text: '춘천', count: 4, lat: 37.9, lng: 128.0, hasHole: true, zIndex: 20, qualitative: '밀착관리' },
+        { id: 'daejeon1', type: 'white', text: '대전지방', count: 1, lat: 36.5, lng: 126.9, innerText: '1', zIndex: 21, qualitative: '기각률0%', isDense: true },
+        { id: 'daejeon2', type: 'white', text: '대전회생', count: 2, lat: 36.2, lng: 127.6, innerText: '2', zIndex: 22, qualitative: '승인완료', isDense: true },
+        { id: 'jeonju', type: 'white', text: '전주', count: 3, lat: 35.8, lng: 127.0, innerText: '3', zIndex: 20, qualitative: '밀착관리' },
+        { id: 'gwangju', type: 'gold-large', text: '광주', count: 17, lat: 35.2, lng: 126.5, zIndex: 28, qualitative: '기각률0%' },
+        { id: 'gwangju-hq', type: 'star', text: '광주 HQ', count: null, lat: 34.6, lng: 126.7, zIndex: 20 },
+        { id: 'changwon', type: 'white', text: '창원', count: 2, lat: 35.3, lng: 128.6, innerText: '2', zIndex: 20, qualitative: '승인완료' },
+        { id: 'ulsan', type: 'white', text: '울산', count: 3, lat: 35.6, lng: 129.5, innerText: '3', zIndex: 20, qualitative: '밀착관리' },
+        { id: 'busan', type: 'text-only', text: '부산회생', count: 3, lat: 35.0, lng: 129.2, zIndex: 20, qualitative: '기각률0%' }
+    ];
+
+    const mapWrapper = document.getElementById('map-wrapper');
+    const svgWidth = 500;
+    const svgHeight = 700;
+
+    // SVG templates
+    const svgPinWhite = `
+        <svg viewBox="0 0 24 36" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 24 12 24s12-15 12-24c0-6.627-5.373-12-12-12z" fill="#ffffff"/>
+            <circle cx="12" cy="12" r="5" fill="#1a2c42" class="hole" />
+        </svg>
+    `;
+
+    const svgStar = `
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#d4af37"/>
+        </svg>
+    `;
+
+    // Load GeoJSON and draw map
+    fetch('/korea.json')
+        .then(response => response.json())
+        .then(geojsonData => {
+            const svg = d3.select("#map-svg");
+            
+            // Create a projection fitted to the SVG viewBox
+            const projection = d3.geoMercator().fitSize([svgWidth, svgHeight], geojsonData);
+            const path = d3.geoPath().projection(projection);
+
+            // Draw the map paths
+            svg.selectAll("path")
+                .data(geojsonData.features)
+                .enter()
+                .append("path")
+                .attr("d", path)
+                .attr("fill", "var(--map-color)")
+                .attr("stroke", "var(--map-stroke)")
+                .attr("stroke-width", 1.5)
+                .attr("stroke-linejoin", "round")
+                .attr("class", "map-path");
+
+            // Create pins dynamically
+            pinsData.forEach(pin => {
+                // Project lat/lng to x/y coordinates
+                const [x, y] = projection([pin.lng, pin.lat]);
+                
+                // Convert to percentages relative to the viewBox
+                const percentX = (x / svgWidth) * 100;
+                const percentY = (y / svgHeight) * 100;
+
+                const el = document.createElement('div');
+                el.className = 'pin-container';
+                if (pin.isDense) el.classList.add('dense-pin');
+                el.style.left = percentX + '%';
+                el.style.top = percentY + '%';
+                el.style.zIndex = pin.zIndex || 5;
+                el.id = 'pin-' + pin.id;
+
+                let content = '';
+                
+                // Determine qualitative label
+                const showQualitative = pin.count !== null && pin.count < 20 && pin.qualitative;
+                const labelContent = showQualitative 
+                    ? `<span class="qualitative-text">${pin.qualitative}</span>`
+                    : (pin.count ? `<span class="count-wrapper"><span class="count" data-target="${pin.count}">0</span>건</span>` : '');
+
+                if (pin.type === 'gold-large') {
+                    content = `
+                        <div class="pin-large">
+                            <div class="pin-large-content">
+                                <div class="pin-large-title">${pin.text}</div>
+                                <div class="pin-large-count"><span class="count" data-target="${pin.count}">0</span>건</div>
+                            </div>
+                        </div>
+                    `;
+                } else if (pin.type === 'white') {
+                    let svgContent = svgPinWhite;
+                    if (!pin.hasHole) {
+                        svgContent = svgContent.replace('<circle cx="12" cy="12" r="5" fill="#1a2c42" class="hole" />', '');
+                    }
+                    content = `
+                        <div class="pin pin-white">
+                            ${svgContent}
+                            ${pin.innerText ? `<div class="pin-number">${pin.innerText}</div>` : ''}
+                        </div>
+                        <div class="pin-label">${pin.text} ${labelContent}</div>
+                    `;
+                } else if (pin.type === 'star') {
+                    content = `
+                        <div class="pin" style="width: 28px; height: 28px; padding-top: 0;">
+                            ${svgStar}
+                        </div>
+                        <div class="pin-label" style="color: var(--gold); margin-top: 4px;">${pin.text}</div>
+                    `;
+                } else if (pin.type === 'text-only') {
+                    content = `
+                        <div class="pin-label" style="color: #ffffff; margin-top: 0;">${pin.text} ${labelContent}</div>
+                    `;
+                }
+
+                el.innerHTML = content;
+                mapWrapper.appendChild(el);
+            });
+
+            // Initialize GSAP Animations after pins are added
+            initAnimations();
+        })
+        .catch(error => {
+            console.error('Error loading map data:', error);
+        });
+
+    // GSAP Animations
+    function initAnimations() {
+        // Timeline for sequential animations
+        const tl = gsap.timeline({ delay: 0.1 });
+
+        // 0. Animate map paths
+        tl.to('.map-path', {
+            opacity: 1,
+            duration: 0.8,
+            stagger: 0.01,
+            ease: "power2.inOut"
+        });
+
+        // 1. Animate pins appearing with stagger
+        tl.to('.pin-container', {
+            y: 0,
+            opacity: 1,
+            duration: 0.7,
+            stagger: 0.1,
+            ease: "back.out(1.5)",
+            onComplete: function() {
+                // Add ripple effect class after appearance
+                document.querySelectorAll('.pin-container').forEach(pin => {
+                    pin.classList.add('ripple-active');
+                });
+            }
+        }, "-=0.4");
+
+        // 2. Animate count up for all pins simultaneously after they appear
+        tl.add(() => {
+            const counters = document.querySelectorAll('.pin-container .count');
+            counters.forEach(counter => {
+                const target = parseInt(counter.getAttribute('data-target'));
+                if (!isNaN(target)) {
+                    gsap.to(counter, {
+                        innerHTML: target,
+                        duration: 1.5,
+                        snap: { innerHTML: 1 },
+                        ease: "power2.out"
+                    });
+                }
+            });
+        }, "-=0.2");
+
+        // 3. Animate info panel and footer logo sliding in
+        tl.to(['#info-panel', '#footer-logo'], {
+            opacity: 1,
+            x: 0,
+            y: 0,
+            duration: 0.8,
+            stagger: 0.2,
+            ease: "power3.out"
+        }, "-=1.2");
+
+        // 4. Animate count up for info panel numbers
+        tl.add(() => {
+            const panelCounters = document.querySelectorAll('.info-panel .count-target');
+            panelCounters.forEach(counter => {
+                const target = parseInt(counter.getAttribute('data-target'));
+                gsap.to(counter, {
+                    innerHTML: target,
+                    duration: 2,
+                    snap: { innerHTML: 1 },
+                    ease: "power2.out"
+                });
+            });
+        }, "-=0.8");
+    }
+</script>
+</body>
+</html>
